@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🔄 Refresh Browser Token</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background: linear-gradient(135deg, #4CAF50, #2196F3);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        .success { color: #4CAF50; background: rgba(76,175,80,0.1); padding: 10px; border-radius: 5px; }
+        .error { color: #f44336; background: rgba(244,67,54,0.1); padding: 10px; border-radius: 5px; }
+        .info { color: #2196F3; background: rgba(33,150,243,0.1); padding: 10px; border-radius: 5px; }
+        .warning { color: #ff9800; background: rgba(255,152,0,0.1); padding: 10px; border-radius: 5px; }
+        button { 
+            padding: 12px 24px; 
+            margin: 10px 5px; 
+            border: none;
+            border-radius: 8px;
+            background: #4CAF50;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        button:hover { background: #45a049; transform: translateY(-2px); }
+        button.secondary { background: #2196F3; }
+        button.secondary:hover { background: #1976D2; }
+        pre { 
+            background: rgba(0,0,0,0.3); 
+            padding: 15px; 
+            border-radius: 8px; 
+            overflow-x: auto;
+            font-size: 14px;
+        }
+        .step {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            border-left: 4px solid #4CAF50;
+        }
+        h1 { text-align: center; margin-bottom: 30px; }
+        h2 { color: #4CAF50; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 Fix CRM Authentication</h1>
+        <p style="text-align: center; font-size: 18px;">
+            This tool will help you fix the "token is not valid" error in your CRM system.
+        </p>
+        
+        <div class="step">
+            <h2>Step 1: Check Current Status</h2>
+            <button onclick="checkStatus()">🔍 Check Current Token Status</button>
+            <div id="statusResult"></div>
+        </div>
+
+        <div class="step">
+            <h2>Step 2: Clear & Refresh</h2>
+            <button onclick="clearAndRefresh()" class="secondary">🧹 Clear Storage & Get Fresh Token</button>
+            <div id="refreshResult"></div>
+        </div>
+
+        <div class="step">
+            <h2>Step 3: Test User Management</h2>
+            <button onclick="testUserManagement()">👥 Test User Creation</button>
+            <div id="testResult"></div>
+        </div>
+
+        <div class="step">
+            <h2>Step 4: Open CRM</h2>
+            <button onclick="openCRM()" style="background: #ff9800;">🚀 Open CRM System</button>
+            <p style="margin-top: 10px; font-size: 14px; opacity: 0.8;">
+                After completing the steps above, click here to open your CRM system.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3001/api';
+        const CRM_URL = 'http://localhost:3000';
+        
+        async function checkStatus() {
+            const resultDiv = document.getElementById('statusResult');
+            resultDiv.innerHTML = '<div class="info">🔄 Checking status...</div>';
+            
+            try {
+                const token = localStorage.getItem('accessToken');
+                
+                if (!token) {
+                    resultDiv.innerHTML = '<div class="warning">⚠️ No token found. You need to log in.</div>';
+                    return;
+                }
+                
+                // Check token expiration
+                const tokenParts = token.split('.');
+                if (tokenParts.length === 3) {
+                    const payload = JSON.parse(atob(tokenParts[1]));
+                    const now = Date.now() / 1000;
+                    const expired = now > payload.exp;
+                    const expiresIn = Math.round((payload.exp - now) / 60);
+                    
+                    let statusHtml = `
+                        <div class="info">
+                            <p><strong>Token Status:</strong> ${expired ? '❌ EXPIRED' : '✅ VALID'}</p>
+                            <p><strong>Expires:</strong> ${new Date(payload.exp * 1000).toLocaleString()}</p>
+                            <p><strong>Time left:</strong> ${expired ? 'Expired' : `${expiresIn} minutes`}</p>
+                        </div>
+                    `;
+                    
+                    // Test API call
+                    try {
+                        const response = await fetch(`${API_BASE}/auth/me`, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        
+                        if (response.ok) {
+                            const userData = await response.json();
+                            statusHtml += `<div class="success">✅ API Test: Token works! User: ${userData.user.firstName} ${userData.user.lastName}</div>`;
+                        } else {
+                            statusHtml += `<div class="error">❌ API Test: Token rejected (${response.status})</div>`;
+                        }
+                    } catch (apiError) {
+                        statusHtml += `<div class="error">❌ API Test: Connection failed</div>`;
+                    }
+                    
+                    resultDiv.innerHTML = statusHtml;
+                } else {
+                    resultDiv.innerHTML = '<div class="error">❌ Invalid token format</div>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+        
+        async function clearAndRefresh() {
+            const resultDiv = document.getElementById('refreshResult');
+            resultDiv.innerHTML = '<div class="info">🔄 Clearing storage and getting fresh token...</div>';
+            
+            try {
+                // Clear all storage
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                // Login to get fresh token
+                const loginResponse = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: 'admin@crm.com',
+                        password: 'admin123'
+                    })
+                });
+                
+                if (!loginResponse.ok) {
+                    throw new Error(`Login failed: ${loginResponse.status}`);
+                }
+                
+                const loginData = await loginResponse.json();
+                
+                // Store new tokens
+                localStorage.setItem('accessToken', loginData.accessToken);
+                localStorage.setItem('refreshToken', loginData.refreshToken);
+                localStorage.setItem('user', JSON.stringify(loginData.user));
+                
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        ✅ Success! Fresh token obtained and stored.
+                        <br><strong>User:</strong> ${loginData.user.firstName} ${loginData.user.lastName}
+                        <br><strong>Role:</strong> ${loginData.user.role}
+                        <br><strong>Token expires:</strong> ${new Date(Date.now() + 15*60*1000).toLocaleString()}
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Failed: ${error.message}</div>`;
+            }
+        }
+        
+        async function testUserManagement() {
+            const resultDiv = document.getElementById('testResult');
+            const token = localStorage.getItem('accessToken');
+            
+            if (!token) {
+                resultDiv.innerHTML = '<div class="error">❌ No token available. Please refresh token first.</div>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '<div class="info">🔄 Testing user management...</div>';
+            
+            try {
+                // Test 1: Fetch users
+                const usersResponse = await fetch(`${API_BASE}/users`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (!usersResponse.ok) {
+                    throw new Error(`Users fetch failed: ${usersResponse.status}`);
+                }
+                
+                const usersData = await usersResponse.json();
+                
+                // Test 2: Create a test user
+                const testUser = {
+                    firstName: 'Test',
+                    lastName: 'User',
+                    email: `test.${Date.now()}@company.com`,
+                    password: 'password123',
+                    role: 'sdr'
+                };
+                
+                const createResponse = await fetch(`${API_BASE}/users`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(testUser)
+                });
+                
+                if (!createResponse.ok) {
+                    const errorData = await createResponse.json();
+                    throw new Error(`User creation failed: ${errorData.message || createResponse.status}`);
+                }
+                
+                const createdUser = await createResponse.json();
+                
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        ✅ User management test successful!
+                        <br><strong>Users found:</strong> ${usersData.users.length}
+                        <br><strong>Test user created:</strong> ${createdUser.firstName} ${createdUser.lastName}
+                        <br><strong>Email:</strong> ${createdUser.email}
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Test failed: ${error.message}</div>`;
+            }
+        }
+        
+        function openCRM() {
+            window.open(CRM_URL, '_blank');
+        }
+        
+        // Auto-check status on page load
+        window.onload = function() {
+            setTimeout(checkStatus, 500);
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fix Token Issue</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        button { padding: 10px 20px; margin: 5px; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Fix Token Issue</h1>
+    
+    <div id="status"></div>
+    
+    <h2>Step 1: Check Current Token</h2>
+    <button onclick="checkCurrentToken()">Check Current Token</button>
+    <div id="tokenStatus"></div>
+    
+    <h2>Step 2: Clear Browser Storage</h2>
+    <button onclick="clearStorage()">Clear All Storage</button>
+    <div id="clearStatus"></div>
+    
+    <h2>Step 3: Get Fresh Token</h2>
+    <button onclick="getFreshToken()">Login & Get Fresh Token</button>
+    <div id="loginStatus"></div>
+    
+    <h2>Step 4: Test User Creation</h2>
+    <button onclick="testUserCreation()">Test Create User</button>
+    <div id="createStatus"></div>
+
+    <script>
+        const API_BASE = 'http://localhost:3001/api';
+        
+        function checkCurrentToken() {
+            const statusDiv = document.getElementById('tokenStatus');
+            const token = localStorage.getItem('accessToken');
+            
+            if (!token) {
+                statusDiv.innerHTML = '<p class="error">❌ No token found in localStorage</p>';
+                return;
+            }
+            
+            try {
+                const tokenParts = token.split('.');
+                if (tokenParts.length !== 3) {
+                    statusDiv.innerHTML = '<p class="error">❌ Invalid token format</p>';
+                    return;
+                }
+                
+                const payload = JSON.parse(atob(tokenParts[1]));
+                const now = Date.now() / 1000;
+                const expired = now > payload.exp;
+                
+                statusDiv.innerHTML = `
+                    <div class="info">
+                        <p><strong>Token found:</strong> ${token.substring(0, 20)}...</p>
+                        <p><strong>User ID:</strong> ${payload.userId}</p>
+                        <p><strong>Issued:</strong> ${new Date(payload.iat * 1000).toLocaleString()}</p>
+                        <p><strong>Expires:</strong> ${new Date(payload.exp * 1000).toLocaleString()}</p>
+                        <p><strong>Current:</strong> ${new Date().toLocaleString()}</p>
+                        <p class="${expired ? 'error' : 'success'}"><strong>Status:</strong> ${expired ? '❌ EXPIRED' : '✅ VALID'}</p>
+                    </div>
+                `;
+            } catch (error) {
+                statusDiv.innerHTML = `<p class="error">❌ Error decoding token: ${error.message}</p>`;
+            }
+        }
+        
+        function clearStorage() {
+            const statusDiv = document.getElementById('clearStatus');
+            
+            // Clear all auth-related storage
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+            localStorage.removeItem('user');
+            sessionStorage.clear();
+            
+            statusDiv.innerHTML = '<p class="success">✅ All browser storage cleared</p>';
+        }
+        
+        async function getFreshToken() {
+            const statusDiv = document.getElementById('loginStatus');
+            statusDiv.innerHTML = '<p class="info">🔄 Logging in...</p>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@crm.com',
+                        password: 'admin123'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.message || 'Login failed');
+                }
+                
+                // Store new token
+                localStorage.setItem('accessToken', data.accessToken);
+                localStorage.setItem('refreshToken', data.refreshToken);
+                localStorage.setItem('user', JSON.stringify(data.user));
+                
+                statusDiv.innerHTML = `
+                    <div class="success">
+                        <p>✅ Login successful!</p>
+                        <p><strong>User:</strong> ${data.user.firstName} ${data.user.lastName}</p>
+                        <p><strong>Role:</strong> ${data.user.role}</p>
+                        <p><strong>Token:</strong> ${data.accessToken.substring(0, 20)}...</p>
+                    </div>
+                `;
+            } catch (error) {
+                statusDiv.innerHTML = `<p class="error">❌ Login failed: ${error.message}</p>`;
+            }
+        }
+        
+        async function testUserCreation() {
+            const statusDiv = document.getElementById('createStatus');
+            const token = localStorage.getItem('accessToken');
+            
+            if (!token) {
+                statusDiv.innerHTML = '<p class="error">❌ No token available. Please get fresh token first.</p>';
+                return;
+            }
+            
+            statusDiv.innerHTML = '<p class="info">🔄 Testing user creation...</p>';
+            
+            const testUser = {
+                firstName: 'Test',
+                lastName: 'User',
+                email: `test.user.${Date.now()}@company.com`,
+                password: 'password123',
+                role: 'sdr'
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE}/users`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(testUser)
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(JSON.stringify(data, null, 2));
+                }
+                
+                statusDiv.innerHTML = `
+                    <div class="success">
+                        <p>✅ User creation successful!</p>
+                        <p><strong>Created:</strong> ${data.firstName} ${data.lastName}</p>
+                        <p><strong>Email:</strong> ${data.email}</p>
+                        <p><strong>Role:</strong> ${data.role}</p>
+                    </div>
+                `;
+            } catch (error) {
+                statusDiv.innerHTML = `<p class="error">❌ User creation failed: ${error.message}</p>`;
+            }
+        }
+        
+        // Auto-check token on page load
+        window.onload = function() {
+            checkCurrentToken();
+        };
+    </script>
+</body>
+</html>

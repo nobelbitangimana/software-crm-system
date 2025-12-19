@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Frontend API</title>
+</head>
+<body>
+    <h1>Debug Frontend API Access</h1>
+    <button onclick="testAPI()">Test Users API</button>
+    <div id="result"></div>
+
+    <script>
+        async function testAPI() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                // First login
+                console.log('Logging in...');
+                const loginResponse = await fetch('http://localhost:3001/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@crm.com',
+                        password: 'admin123'
+                    })
+                });
+                
+                const loginData = await loginResponse.json();
+                console.log('Login response:', loginData);
+                
+                if (!loginResponse.ok) {
+                    throw new Error('Login failed');
+                }
+                
+                const token = loginData.accessToken;
+                
+                // Then fetch users
+                console.log('Fetching users...');
+                const usersResponse = await fetch('http://localhost:3001/api/users', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const usersData = await usersResponse.json();
+                console.log('Users response:', usersData);
+                
+                if (!usersResponse.ok) {
+                    throw new Error('Users fetch failed');
+                }
+                
+                resultDiv.innerHTML = `
+                    <h3>✅ Success!</h3>
+                    <p><strong>Login:</strong> ${loginData.user.firstName} ${loginData.user.lastName}</p>
+                    <p><strong>Users found:</strong> ${usersData.users.length}</p>
+                    <pre>${JSON.stringify(usersData, null, 2)}</pre>
+                `;
+                
+            } catch (error) {
+                console.error('Error:', error);
+                resultDiv.innerHTML = `
+                    <h3>❌ Error!</h3>
+                    <p>${error.message}</p>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
