@@ -1,0 +1,9 @@
+// Vercel serverless function for health check
+export default function handler(req, res) {
+  res.status(200).json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'production',
+    message: 'CRM Backend is running'
+  });
+}
