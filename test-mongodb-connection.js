@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+hconst mongoose = require('mongoose');
 
 // Replace with your actual connection string from MongoDB Atlas
 const MONGODB_URI = 'mongodb+srv://bitangimanaalainnobel_db_user:wnwPf2wbfep96edr@cluster0.lifsbo1.mongodb.net/crm?retryWrites=true&w=majority&appName=Cluster0';

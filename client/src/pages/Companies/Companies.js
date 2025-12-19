@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   Box,
   Card,
@@ -39,56 +40,19 @@ import { useNavigate } from 'react-router-dom';
 import CompanyForm from '../../components/Companies/CompanyForm';
 import MobileTable from '../../components/Mobile/MobileTable';
 import MobileFAB from '../../components/Mobile/MobileFAB';
+import { fetchCompanies, createCompany, updateCompany } from '../../store/slices/companiesSlice';
 
 const Companies = () => {
   const navigate = useNavigate();
-  const [companies, setCompanies] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const dispatch = useDispatch();
+  const { companies, loading, error } = useSelector((state) => state.companies);
   const [searchTerm, setSearchTerm] = useState('');
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState(null);
 
-  // Mock data for now
   useEffect(() => {
-    const mockCompanies = [
-      {
-        _id: '1',
-        name: 'TechCorp Solutions',
-        domain: 'techcorp.com',
-        industry: 'SaaS',
-        size: '201-500',
-        status: 'customer',
-        healthScore: 85,
-        healthStatus: 'healthy',
-        arr: 120000,
-        accountExecutive: { firstName: 'John', lastName: 'Smith' },
-        customerSuccessManager: { firstName: 'Sarah', lastName: 'Johnson' },
-        contactCount: 8,
-        dealCount: 3,
-        lastEngagement: new Date('2024-12-15'),
-      },
-      {
-        _id: '2',
-        name: 'StartupXYZ',
-        domain: 'startupxyz.io',
-        industry: 'Fintech',
-        size: '11-50',
-        status: 'prospect',
-        healthScore: 65,
-        healthStatus: 'at-risk',
-        arr: 0,
-        accountExecutive: { firstName: 'Mike', lastName: 'Davis' },
-        contactCount: 3,
-        dealCount: 1,
-        lastEngagement: new Date('2024-12-10'),
-      },
-    ];
-    
-    setTimeout(() => {
-      setCompanies(mockCompanies);
-      setLoading(false);
-    }, 1000);
-  }, []);
+    dispatch(fetchCompanies());
+  }, [dispatch]);
 
   const getHealthColor = (status) => {
     switch (status) {
@@ -111,7 +75,7 @@ const Companies = () => {
 
   const filteredCompanies = companies.filter(company =>
     company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    company.domain.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (company.website && company.website.toLowerCase().includes(searchTerm.toLowerCase())) ||
     company.industry.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -127,6 +91,19 @@ const Companies = () => {
 
   const handleViewCompany = (companyId) => {
     navigate(`/companies/${companyId}`);
+  };
+
+  const handleSubmitCompany = async (data) => {
+    try {
+      if (selectedCompany) {
+        await dispatch(updateCompany({ id: selectedCompany.id, data })).unwrap();
+      } else {
+        await dispatch(createCompany(data)).unwrap();
+      }
+      setOpenDialog(false);
+    } catch (error) {
+      console.error('Error saving company:', error);
+    }
   };
 
   const formatCurrency = (amount) => {
@@ -193,7 +170,7 @@ const Companies = () => {
                 <PeopleIcon sx={{ fontSize: 40, mr: 2 }} />
                 <Box>
                   <Typography variant="h4" sx={{ fontWeight: 600, color: 'white' }}>
-                    {companies.filter(c => c.status === 'customer').length}
+                    {companies.filter(c => c.status === 'active').length}
                   </Typography>
                   <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)' }}>
                     Active Customers
@@ -229,7 +206,7 @@ const Companies = () => {
                 <MoneyIcon sx={{ fontSize: 40, mr: 2 }} />
                 <Box>
                   <Typography variant="h4" sx={{ fontWeight: 600, color: 'white' }}>
-                    {formatCurrency(companies.reduce((sum, c) => sum + (c.arr || 0), 0))}
+                    {formatCurrency(0)}
                   </Typography>
                   <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)' }}>
                     Total ARR
@@ -291,7 +268,7 @@ const Companies = () => {
             </TableHead>
             <TableBody>
               {filteredCompanies.map((company) => (
-                <TableRow key={company._id} hover>
+                <TableRow key={company.id} hover>
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                       <Avatar sx={{ mr: 2, bgcolor: 'primary.main' }}>
@@ -301,9 +278,11 @@ const Companies = () => {
                         <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
                           {company.name}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          {company.domain}
-                        </Typography>
+                  <TableCell>
+                    <Typography variant="body2" color="text.secondary">
+                      {company.website || 'No website'}
+                    </Typography>
+                  </TableCell>
                       </Box>
                     </Box>
                   </TableCell>
@@ -313,41 +292,38 @@ const Companies = () => {
                   <TableCell>{company.size}</TableCell>
                   <TableCell>
                     <Chip 
-                      label={company.status} 
-                      color={getStatusColor(company.status)}
+                      label={company.status || 'prospect'} 
+                      color={getStatusColor(company.status || 'prospect')}
                       size="small"
                     />
                   </TableCell>
                   <TableCell>
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>
                       <Chip 
-                        label={company.healthStatus} 
-                        color={getHealthColor(company.healthStatus)}
+                        label="healthy" 
+                        color="success"
                         size="small"
                         sx={{ mr: 1 }}
                       />
                       <Typography variant="body2">
-                        {company.healthScore}%
+                        85%
                       </Typography>
                     </Box>
                   </TableCell>
                   <TableCell>
                     <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                      {formatCurrency(company.arr || 0)}
+                      {formatCurrency(0)}
                     </Typography>
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2">
-                      {company.accountExecutive ? 
-                        `${company.accountExecutive.firstName} ${company.accountExecutive.lastName}` : 
-                        'Unassigned'
-                      }
+                      Unassigned
                     </Typography>
                   </TableCell>
                   <TableCell>
                     <Typography variant="body2">
-                      {company.lastEngagement ? 
-                        company.lastEngagement.toLocaleDateString() : 
+                      {company.createdAt ? 
+                        new Date(company.createdAt).toLocaleDateString() : 
                         'Never'
                       }
                     </Typography>
@@ -356,7 +332,7 @@ const Companies = () => {
                     <Tooltip title="View Details">
                       <IconButton 
                         size="small" 
-                        onClick={() => handleViewCompany(company._id)}
+                        onClick={() => handleViewCompany(company.id)}
                         sx={{ mr: 1 }}
                       >
                         <ViewIcon />
@@ -391,11 +367,7 @@ const Companies = () => {
         <DialogContent>
           <CompanyForm 
             company={selectedCompany}
-            onSubmit={(data) => {
-              // Handle form submission
-              console.log('Company data:', data);
-              setOpenDialog(false);
-            }}
+            onSubmit={handleSubmitCompany}
             onCancel={() => setOpenDialog(false)}
           />
         </DialogContent>

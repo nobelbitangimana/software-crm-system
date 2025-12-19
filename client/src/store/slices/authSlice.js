@@ -39,11 +39,32 @@ export const checkAuth = createAsyncThunk(
       if (!token) {
         throw new Error('No token found');
       }
+      
+      // Quick check for demo tokens
+      if (token.startsWith('demo-token-')) {
+        const email = localStorage.getItem('userEmail');
+        if (email === 'admin@crm.com') {
+          return {
+            user: {
+              id: '1',
+              firstName: 'Admin',
+              lastName: 'User',
+              email: 'admin@crm.com',
+              role: 'admin',
+              department: 'Management',
+              permissions: ['all']
+            }
+          };
+        }
+      }
+      
       const response = await authAPI.getCurrentUser();
       return response;
     } catch (error) {
+      // Clear invalid tokens
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
+      localStorage.removeItem('userEmail');
       return rejectWithValue('Authentication failed');
     }
   }

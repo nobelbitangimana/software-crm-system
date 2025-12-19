@@ -106,8 +106,8 @@ const ticketsSlice = createSlice({
       })
       .addCase(fetchTickets.fulfilled, (state, action) => {
         state.loading = false;
-        state.tickets = action.payload.tickets;
-        state.pagination = action.payload.pagination;
+        state.tickets = action.payload;
+        state.pagination = { current: 1, pages: 1, total: action.payload.length, limit: 20 };
       })
       .addCase(fetchTickets.rejected, (state, action) => {
         state.loading = false;

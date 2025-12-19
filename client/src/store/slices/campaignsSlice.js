@@ -105,8 +105,8 @@ const campaignsSlice = createSlice({
       })
       .addCase(fetchCampaigns.fulfilled, (state, action) => {
         state.loading = false;
-        state.campaigns = action.payload.campaigns;
-        state.pagination = action.payload.pagination;
+        state.campaigns = action.payload;
+        state.pagination = { current: 1, pages: 1, total: action.payload.length, limit: 20 };
       })
       .addCase(fetchCampaigns.rejected, (state, action) => {
         state.loading = false;

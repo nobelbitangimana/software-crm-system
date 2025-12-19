@@ -129,11 +129,11 @@ const dealsSlice = createSlice({
       })
       .addCase(fetchDeals.fulfilled, (state, action) => {
         state.loading = false;
-        state.deals = action.payload.deals;
-        state.pagination = action.payload.pagination;
+        state.deals = action.payload;
+        state.pagination = { current: 1, pages: 1, total: action.payload.length, limit: 20 };
         
         // Update pipeline
-        state.pipeline = action.payload.deals.reduce((acc, deal) => {
+        state.pipeline = action.payload.reduce((acc, deal) => {
           if (!acc[deal.stage]) acc[deal.stage] = [];
           acc[deal.stage].push(deal);
           return acc;
