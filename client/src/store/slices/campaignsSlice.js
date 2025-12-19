@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { api } from '../../services/authAPI';
+import { enhancedAPI } from '../../services/authAPI';
 
 // Async thunks
 export const fetchCampaigns = createAsyncThunk(
@@ -7,7 +7,7 @@ export const fetchCampaigns = createAsyncThunk(
   async (params = {}, { rejectWithValue }) => {
     try {
       const queryString = new URLSearchParams(params).toString();
-      const response = await api.get(`/campaigns?${queryString}`);
+      const response = await enhancedAPI.get(`/campaigns?${queryString}`);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch campaigns');
@@ -19,7 +19,7 @@ export const fetchCampaign = createAsyncThunk(
   'campaigns/fetchCampaign',
   async (id, { rejectWithValue }) => {
     try {
-      const response = await api.get(`/campaigns/${id}`);
+      const response = await enhancedAPI.get(`/campaigns/${id}`);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch campaign');
@@ -31,7 +31,7 @@ export const createCampaign = createAsyncThunk(
   'campaigns/createCampaign',
   async (campaignData, { rejectWithValue }) => {
     try {
-      const response = await api.post('/campaigns', campaignData);
+      const response = await enhancedAPI.post('/campaigns', campaignData);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to create campaign');
@@ -43,7 +43,7 @@ export const updateCampaign = createAsyncThunk(
   'campaigns/updateCampaign',
   async ({ id, data }, { rejectWithValue }) => {
     try {
-      const response = await api.put(`/campaigns/${id}`, data);
+      const response = await enhancedAPI.put(`/campaigns/${id}`, data);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to update campaign');
@@ -55,7 +55,7 @@ export const deleteCampaign = createAsyncThunk(
   'campaigns/deleteCampaign',
   async (id, { rejectWithValue }) => {
     try {
-      await api.delete(`/campaigns/${id}`);
+      await enhancedAPI.delete(`/campaigns/${id}`);
       return id;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to delete campaign');
@@ -143,19 +143,19 @@ const campaignsSlice = createSlice({
       
       // Update campaign
       .addCase(updateCampaign.fulfilled, (state, action) => {
-        const index = state.campaigns.findIndex(campaign => campaign._id === action.payload._id);
+        const index = state.campaigns.findIndex(campaign => campaign.id === action.payload.id);
         if (index !== -1) {
           state.campaigns[index] = action.payload;
         }
-        if (state.currentCampaign?._id === action.payload._id) {
+        if (state.currentCampaign?.id === action.payload.id) {
           state.currentCampaign = action.payload;
         }
       })
       
       // Delete campaign
       .addCase(deleteCampaign.fulfilled, (state, action) => {
-        state.campaigns = state.campaigns.filter(campaign => campaign._id !== action.payload);
-        if (state.currentCampaign?._id === action.payload) {
+        state.campaigns = state.campaigns.filter(campaign => campaign.id !== action.payload);
+        if (state.currentCampaign?.id === action.payload) {
           state.currentCampaign = null;
         }
       });

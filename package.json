@@ -1,30 +1,19 @@
 {
-  "name": "crm-system",
+  "name": "crm-backend-api",
   "version": "1.0.0",
-  "description": "Full-stack CRM system with React and Node.js",
-  "main": "server/index.js",
+  "description": "CRM Backend API for Vercel Serverless Functions",
+  "main": "index.js",
   "scripts": {
-    "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "server": "cd server && npm run dev",
-    "client": "cd client && npm start",
-    "build": "cd client && npm run build",
-    "install-all": "npm install && cd server && npm install && cd ../client && npm install",
-    "check-setup": "node check-setup.js"
-  },
-  "keywords": [
-    "crm",
-    "react",
-    "nodejs",
-    "express"
-  ],
-  "author": "",
-  "license": "MIT",
-  "devDependencies": {
-    "concurrently": "^8.2.2"
+    "dev": "vercel dev",
+    "build": "vercel build",
+    "deploy": "vercel --prod"
   },
   "dependencies": {
-    "axios": "^1.13.2",
-    "bcryptjs": "^3.0.3",
-    "mongoose": "^9.0.2"
+    "mongoose": "^8.0.3",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "engines": {
+    "node": "18.x"
   }
 }

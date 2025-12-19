@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { api } from '../../services/authAPI';
+import { enhancedAPI } from '../../services/authAPI';
 
 // Async thunks
 export const fetchContacts = createAsyncThunk(
@@ -7,8 +7,8 @@ export const fetchContacts = createAsyncThunk(
   async (params = {}, { rejectWithValue }) => {
     try {
       const queryString = new URLSearchParams(params).toString();
-      const response = await api.get(`/contacts?${queryString}`);
-      return response.data;
+      const response = await enhancedAPI.get(`/contacts?${queryString}`);
+      return { contacts: response.data, pagination: { current: 1, pages: 1, total: response.data.length, limit: 20 } };
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch contacts');
     }
@@ -19,7 +19,7 @@ export const fetchContact = createAsyncThunk(
   'contacts/fetchContact',
   async (id, { rejectWithValue }) => {
     try {
-      const response = await api.get(`/contacts/${id}`);
+      const response = await enhancedAPI.get(`/contacts/${id}`);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch contact');
@@ -31,7 +31,7 @@ export const createContact = createAsyncThunk(
   'contacts/createContact',
   async (contactData, { rejectWithValue }) => {
     try {
-      const response = await api.post('/contacts', contactData);
+      const response = await enhancedAPI.post('/contacts', contactData);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to create contact');
@@ -43,7 +43,7 @@ export const updateContact = createAsyncThunk(
   'contacts/updateContact',
   async ({ id, data }, { rejectWithValue }) => {
     try {
-      const response = await api.put(`/contacts/${id}`, data);
+      const response = await enhancedAPI.put(`/contacts/${id}`, data);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to update contact');
@@ -55,7 +55,7 @@ export const deleteContact = createAsyncThunk(
   'contacts/deleteContact',
   async (id, { rejectWithValue }) => {
     try {
-      await api.delete(`/contacts/${id}`);
+      await enhancedAPI.delete(`/contacts/${id}`);
       return id;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to delete contact');
@@ -144,19 +144,19 @@ const contactsSlice = createSlice({
       
       // Update contact
       .addCase(updateContact.fulfilled, (state, action) => {
-        const index = state.contacts.findIndex(contact => contact._id === action.payload._id);
+        const index = state.contacts.findIndex(contact => contact.id === action.payload.id);
         if (index !== -1) {
           state.contacts[index] = action.payload;
         }
-        if (state.currentContact?._id === action.payload._id) {
+        if (state.currentContact?.id === action.payload.id) {
           state.currentContact = action.payload;
         }
       })
       
       // Delete contact
       .addCase(deleteContact.fulfilled, (state, action) => {
-        state.contacts = state.contacts.filter(contact => contact._id !== action.payload);
-        if (state.currentContact?._id === action.payload) {
+        state.contacts = state.contacts.filter(contact => contact.id !== action.payload);
+        if (state.currentContact?.id === action.payload) {
           state.currentContact = null;
         }
       });

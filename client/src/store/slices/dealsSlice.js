@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { api } from '../../services/authAPI';
+import { enhancedAPI } from '../../services/authAPI';
 
 // Async thunks
 export const fetchDeals = createAsyncThunk(
@@ -7,7 +7,7 @@ export const fetchDeals = createAsyncThunk(
   async (params = {}, { rejectWithValue }) => {
     try {
       const queryString = new URLSearchParams(params).toString();
-      const response = await api.get(`/deals?${queryString}`);
+      const response = await enhancedAPI.get(`/deals?${queryString}`);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch deals');
@@ -19,7 +19,7 @@ export const fetchDeal = createAsyncThunk(
   'deals/fetchDeal',
   async (id, { rejectWithValue }) => {
     try {
-      const response = await api.get(`/deals/${id}`);
+      const response = await enhancedAPI.get(`/deals/${id}`);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch deal');
@@ -31,7 +31,7 @@ export const createDeal = createAsyncThunk(
   'deals/createDeal',
   async (dealData, { rejectWithValue }) => {
     try {
-      const response = await api.post('/deals', dealData);
+      const response = await enhancedAPI.post('/deals', dealData);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to create deal');
@@ -43,7 +43,7 @@ export const updateDeal = createAsyncThunk(
   'deals/updateDeal',
   async ({ id, data }, { rejectWithValue }) => {
     try {
-      const response = await api.put(`/deals/${id}`, data);
+      const response = await enhancedAPI.put(`/deals/${id}`, data);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to update deal');
@@ -55,7 +55,7 @@ export const deleteDeal = createAsyncThunk(
   'deals/deleteDeal',
   async (id, { rejectWithValue }) => {
     try {
-      await api.delete(`/deals/${id}`);
+      await enhancedAPI.delete(`/deals/${id}`);
       return id;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to delete deal');
@@ -187,7 +187,7 @@ const dealsSlice = createSlice({
       
       // Update deal
       .addCase(updateDeal.fulfilled, (state, action) => {
-        const index = state.deals.findIndex(deal => deal._id === action.payload._id);
+        const index = state.deals.findIndex(deal => deal.id === action.payload.id);
         if (index !== -1) {
           const oldStage = state.deals[index].stage;
           const newStage = action.payload.stage;
@@ -198,7 +198,7 @@ const dealsSlice = createSlice({
           if (oldStage !== newStage) {
             // Remove from old stage
             state.pipeline[oldStage] = state.pipeline[oldStage].filter(
-              deal => deal._id !== action.payload._id
+              deal => deal.id !== action.payload.id
             );
             
             // Add to new stage
@@ -208,7 +208,7 @@ const dealsSlice = createSlice({
           } else {
             // Update in same stage
             const pipelineIndex = state.pipeline[newStage].findIndex(
-              deal => deal._id === action.payload._id
+              deal => deal.id === action.payload.id
             );
             if (pipelineIndex !== -1) {
               state.pipeline[newStage][pipelineIndex] = action.payload;
@@ -216,25 +216,25 @@ const dealsSlice = createSlice({
           }
         }
         
-        if (state.currentDeal?._id === action.payload._id) {
+        if (state.currentDeal?.id === action.payload.id) {
           state.currentDeal = action.payload;
         }
       })
       
       // Delete deal
       .addCase(deleteDeal.fulfilled, (state, action) => {
-        const dealIndex = state.deals.findIndex(deal => deal._id === action.payload);
+        const dealIndex = state.deals.findIndex(deal => deal.id === action.payload);
         if (dealIndex !== -1) {
           const deal = state.deals[dealIndex];
-          state.deals = state.deals.filter(d => d._id !== action.payload);
+          state.deals = state.deals.filter(d => d.id !== action.payload);
           
           // Remove from pipeline
           state.pipeline[deal.stage] = state.pipeline[deal.stage].filter(
-            d => d._id !== action.payload
+            d => d.id !== action.payload
           );
         }
         
-        if (state.currentDeal?._id === action.payload) {
+        if (state.currentDeal?.id === action.payload) {
           state.currentDeal = null;
         }
       });

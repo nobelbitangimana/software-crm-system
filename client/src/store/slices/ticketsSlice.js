@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { api } from '../../services/authAPI';
+import { enhancedAPI } from '../../services/authAPI';
 
 // Async thunks
 export const fetchTickets = createAsyncThunk(
@@ -7,7 +7,7 @@ export const fetchTickets = createAsyncThunk(
   async (params = {}, { rejectWithValue }) => {
     try {
       const queryString = new URLSearchParams(params).toString();
-      const response = await api.get(`/tickets?${queryString}`);
+      const response = await enhancedAPI.get(`/tickets?${queryString}`);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch tickets');
@@ -19,7 +19,7 @@ export const fetchTicket = createAsyncThunk(
   'tickets/fetchTicket',
   async (id, { rejectWithValue }) => {
     try {
-      const response = await api.get(`/tickets/${id}`);
+      const response = await enhancedAPI.get(`/tickets/${id}`);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch ticket');
@@ -31,7 +31,7 @@ export const createTicket = createAsyncThunk(
   'tickets/createTicket',
   async (ticketData, { rejectWithValue }) => {
     try {
-      const response = await api.post('/tickets', ticketData);
+      const response = await enhancedAPI.post('/tickets', ticketData);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to create ticket');
@@ -43,7 +43,7 @@ export const updateTicket = createAsyncThunk(
   'tickets/updateTicket',
   async ({ id, data }, { rejectWithValue }) => {
     try {
-      const response = await api.put(`/tickets/${id}`, data);
+      const response = await enhancedAPI.put(`/tickets/${id}`, data);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to update ticket');
@@ -55,7 +55,7 @@ export const deleteTicket = createAsyncThunk(
   'tickets/deleteTicket',
   async (id, { rejectWithValue }) => {
     try {
-      await api.delete(`/tickets/${id}`);
+      await enhancedAPI.delete(`/tickets/${id}`);
       return id;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to delete ticket');
@@ -144,19 +144,19 @@ const ticketsSlice = createSlice({
       
       // Update ticket
       .addCase(updateTicket.fulfilled, (state, action) => {
-        const index = state.tickets.findIndex(ticket => ticket._id === action.payload._id);
+        const index = state.tickets.findIndex(ticket => ticket.id === action.payload.id);
         if (index !== -1) {
           state.tickets[index] = action.payload;
         }
-        if (state.currentTicket?._id === action.payload._id) {
+        if (state.currentTicket?.id === action.payload.id) {
           state.currentTicket = action.payload;
         }
       })
       
       // Delete ticket
       .addCase(deleteTicket.fulfilled, (state, action) => {
-        state.tickets = state.tickets.filter(ticket => ticket._id !== action.payload);
-        if (state.currentTicket?._id === action.payload) {
+        state.tickets = state.tickets.filter(ticket => ticket.id !== action.payload);
+        if (state.currentTicket?.id === action.payload) {
           state.currentTicket = null;
         }
       });

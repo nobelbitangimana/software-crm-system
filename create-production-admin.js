@@ -11,8 +11,8 @@ const MONGODB_URI = 'mongodb+srv://bitangimanaalainnobel_db_user:wnwPf2wbfep96ed
 const adminData = {
   firstName: 'Admin',
   lastName: 'User',
-  email: 'admin@yourcompany.com',
-  password: 'ChangeThisPassword123!', // CHANGE THIS!
+  email: 'admin@crm.com',
+  password: 'admin123', // Simple password for now
   role: 'admin',
   department: 'Management',
   isActive: true

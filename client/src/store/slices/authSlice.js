@@ -7,8 +7,9 @@ export const login = createAsyncThunk(
   async ({ email, password }, { rejectWithValue }) => {
     try {
       const response = await authAPI.login(email, password);
-      localStorage.setItem('accessToken', response.accessToken);
+      localStorage.setItem('accessToken', response.token);
       localStorage.setItem('refreshToken', response.refreshToken);
+      localStorage.setItem('userEmail', email); // Store email for demo mode
       return response;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Login failed');
@@ -55,11 +56,13 @@ export const logout = createAsyncThunk(
       await authAPI.logout();
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
+      localStorage.removeItem('userEmail');
       return {};
     } catch (error) {
       // Even if logout fails on server, clear local storage
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
+      localStorage.removeItem('userEmail');
       return {};
     }
   }
