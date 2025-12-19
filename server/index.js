@@ -41,6 +41,7 @@ const corsOptions = {
     const allowedOrigins = [
       'http://localhost:3000',
       'http://localhost:3001',
+      'https://warm-stroopwafel-01d9af.netlify.app',
       process.env.CLIENT_URL
     ].filter(Boolean); // Remove any undefined values
     
@@ -85,6 +86,15 @@ io.on('connection', (socket) => {
 app.set('io', io);
 
 // Routes
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    database: isDemoMode ? 'demo' : 'mongodb'
+  });
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/companies', companyRoutes);
