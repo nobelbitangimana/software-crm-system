@@ -1,12 +1,13 @@
 [build]
   base = "client"
   publish = "client/build"
-  command = "npm install && CI=false npm run build"
+  command = "npm ci && CI=false GENERATE_SOURCEMAP=false npm run build"
 
 [build.environment]
   NODE_VERSION = "18"
   CI = "false"
   GENERATE_SOURCEMAP = "false"
+  NPM_FLAGS = "--production=false"
 
 [[redirects]]
   from = "/*"
